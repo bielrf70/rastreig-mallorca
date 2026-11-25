@@ -2,19 +2,26 @@ name: Rastreig Integral Mallorca
 
 on:
   schedule:
-    # S'executa cada dia (dilluns a diumenge) a les 11:00 UTC (12:00 h a Mallorca a l'hivern)
-    - cron: '0 11 * * *'
+    - cron: '0 11 * * *' # 12:00 hora de Mallorca
   workflow_dispatch:
 
 jobs:
   executa-rastreig:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Descarrega el repositori
+        uses: actions/checkout@v4
+
+      - name: Configura Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements.txt
+
+      - name: Instal·la dependències i navegador
+        run: |
+          pip install requests beautifulsoup4 psycopg2-binary playwright
+          playwright install chromium
+
       - name: Executa rastrejador contra Neon
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
