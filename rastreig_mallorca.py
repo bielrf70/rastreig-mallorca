@@ -74,14 +74,16 @@ MUNICIPIS_53 = [
     ("Vilafranca de Bonany", "https://ajvilafrancadebonany.sedelectronica.es/board"),
 ]
 
-# 2. ORGANISMES AUTONÒMICS, INSULARS, UNIVERSITATS, EMPRESES PÚBLIQUES I TERCER SECTOR
+# 2. ORGANISMES AUTONÒMICS, INSULARS, UNIVERSITATS I EMPRESES PÚBLIQUES (URLS DIRECTES A TAULERS)
 ENTITATS_PUBLIQUES = [
+    ("IMAS (Ofertes)", "https://www.imasmallorca.net/ca/ofertes-de-feina"),
     ("IMAS (Seu Electrònica)", "https://seu.imasmallorca.net/"),
-    ("Consell de Mallorca (Seu)", "https://seu.conselldemallorca.net/"),
+    ("Consell de Mallorca (Tauler)", "https://seu.conselldemallorca.net/tauler-d-anuncis"),
     ("Agència Defensa Territori (ADT)", "https://adt.conselldemallorca.net/"),
     ("Consorci Serra de Tramuntana", "https://www.serradetramuntana.net/"),
-    ("CAIB Oposicions", "https://www.caib.es/sites/oposicions/"),
-    ("IB-SALUT Recursos Humans", "https://www.ibsalut.es/ca/professionals/recursos-humans"),
+    ("CAIB Oposicions (Novetats)", "https://www.caib.es/sites/oposicions/ca/novetats/"),
+    ("CAIB Oposicions (Borses)", "https://www.caib.es/sites/oposicions/ca/borses_temporals/"),
+    ("IB-SALUT Recursos Humans", "https://www.ibsalut.es/ca/professionals/recursos-humans/treballa-amb-nosaltres"),
     ("IBAVI", "https://www.caib.es/sites/ibavi/"),
     ("ABAQUA", "https://www.abaqua.cat/"),
     ("IBANAT", "https://ibanat.caib.es/"),
@@ -90,16 +92,17 @@ ENTITATS_PUBLIQUES = [
     ("Fundació BIT", "https://www.fundaciobit.org/"),
     ("IBETEC", "https://ibetec.caib.es/"),
     ("IBESTAT", "https://ibestat.es/"),
-    ("SOIB Ofertes", "https://soib.es/"),
+    ("SOIB Ofertes", "https://soib.es/ofertes-de-feina/"),
     ("PalmaActiva", "https://web.palmactiva.cat/"),
     ("EMAYA Palma", "https://www.emaya.es/"),
     ("SMAP Palma", "https://smap.palma.es/"),
-    ("UIB Investigació Convocatòries", "https://investigacio.uib.cat/Contractacio/Convocatories-vigents/"),
+    ("UIB Investigació", "https://investigacio.uib.cat/Contractacio/Convocatories-vigents/"),
+    ("UIB PTGAS (Administració)", "https://rrhh.uib.cat/arees/pas/convocatories/"),
     ("FUEIB Ofertes", "https://fueib.org/"),
     ("IMEDEA (CSIC-UIB)", "https://imedea.uib-csic.es/"),
     ("SOCIB", "https://www.socib.es/"),
-    ("TRAGSA / TRAGSATEC Ocupació", "https://www.tragsa.es/es/empleo/Paginas/default.aspx"),
-    ("Autoritat Portuària Balears", "https://www.portsdebalears.com/"),
+    ("TRAGSA / TRAGSATEC", "https://www.tragsa.es/es/empleo/Paginas/default.aspx"),
+    ("Autoritat Portuària Balears", "https://portsdebalears.com/convocatorias"),
     ("Mancomunitat Pla de Mallorca", "https://www.mancomunitatplademallorca.net/"),
     ("Mancomunitat des Raiguer", "https://www.mancomunitatdesraiguer.net/"),
     ("Mancomunitat del Migjorn", "https://www.mancomunitatdelmigjorn.org/"),
@@ -109,7 +112,7 @@ ENTITATS_PUBLIQUES = [
     ("Fundació Deixalles", "https://www.deixalles.org/"),
 ]
 
-# 3. FILTRES DE DOBLE CLAU: (1) ÉS UNA OFERTA D'OCUPACIÓ + (2) ENCAIXA AMB EL TEU PERFIL
+# 3. FILTRES: CONVOCATÒRIES OBERTES + EXCLUSIÓ DE C2, TRÀMITS TANCATS I CARRERES ALIENES
 NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mallorca", "illes balears", "islas baleares", "caib", "imas", "1232767",
     "consell de mallorca", "ib-salut", "ibsalut", "ibavi", "abaqua", "ibanat",
@@ -118,34 +121,21 @@ NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mancomunitat des raiguer", "mancomunitat del migjorn", "mancomunitat del nord", "tramuntana"
 ]
 
-# Clau 1: Ha d'indicar explícitament que és un procés selectiu, borsí, oposició o oferta de feina
 OCUPACIO = [
     r"bors[íia]", r"borsa de treball", r"bolsa de trabajo", r"bolsa de empleo",
     r"oposic", r"concurs[- ]oposic", r"procés selectiu", r"proceso selectivo",
     r"procediment selectiu", r"procedimiento selectivo", r"oferta de treball",
     r"oferta d'ocupació", r"oferta de empleo", r"contractació de personal",
-    r"contratación de personal", r"provisió d'un lloc", r"provisión de un puesto",
-    r"cobertura de \d+ pla", r"cobertura d'una pla", r"nova convocatòria",
-    r"anunci de la convocatòria", r"bases i convocatòria", r"bases de la convocatòria"
+    r"contratación de personal", r"provisió", r"provisión",
+    r"cobertura de \d+ pla", r"cobertura d'una pla", r"cobertura de pla",
+    r"nova convocatòria", r"anunci de la convocatòria", r"bases i convocatòria",
+    r"bases de la convocatòria", r"bases reguladores", r"convocatòria pública"
 ]
 
-# Clau 2: Ha d'encaixar amb Geografia, Ciències Socials, Territori, SIG o Administració general (A1/A2/C1)
-PERFILS = [
-    r"ge[òo]graf", r"geografia", r"soci[òo]leg", r"sociologia", r"\bsig\b", r"\bgis\b",
-    r"cartograf", r"territori", r"urbanism", r"habitatge", r"vivienda",
-    r"mobilitat", r"movilidad", r"demograf", r"estadístic", r"enquest",
-    r"recerca", r"investigaci", r"polítiques públiques", r"políticas públicas",
-    r"projectes europeus", r"fons europeus", r"medi ambient", r"medio ambiente",
-    r"administratiu", r"administrativo", r"administració general", r"administración general",
-    r"gestió", r"gestión", r"tècnic", r"técnico", r"titulat superior", r"titulat mitjà",
-    r"\ba1\b", r"\ba2\b", r"\bc1\b", r"\btag\b", r"anunci de la convocatòria"
-]
-
-# Titulacions específiques alienes al Grau en Geografia / Administració general
 TITULACIONS_EXCLOSES = [
+    r"auxiliar administratiu", r"auxiliar administrativo", r"aux\.?\s*adm",
     r"grau en dret", r"grado en derecho", r"llicenciatura en dret", r"licenciatura en derecho",
-    r"tècnic/a superior jurídic", r"tècnic superior jurídic", r"técnico superior jurídico",
-    r"assessor/a jurídic", r"asesor jurídico", r"lletrat", r"letrado", r"advocat",
+    r"jurídic", r"jurídico", r"lletrat", r"letrado", r"advocat",
     r"sanitari", r"sanitario", r"metge", r"médico", r"infermer", r"enfermer",
     r"auxiliar d'infermeria", r"tcae", r"celador", r"fisioterapeuta", r"farmacèutic",
     r"veterinari", r"psic[òo]leg", r"psicología", r"treballador/a social", r"treballador social",
@@ -159,15 +149,18 @@ TITULACIONS_EXCLOSES = [
     r"fuster", r"jardiner", r"netej", r"conserge", r"subaltern", r"ordenança", r"peó", r"operari", r"brigada"
 ]
 
-# Exclusions de tràmits intermedis, licitacions, notícies, memòries i altres illes
 EXCLOURES = [
     r"\bc2\b", r"licit", r"contracte de servei", r"contrato de servicio", r"plecs", r"pliegos",
     r"pressupost base", r"perfil del contractant", r"adjudicaci", r"adjudicación",
     r"llista provisional", r"lista provisional", r"llista definitiva", r"lista definitiva",
     r"relació provisional", r"relación provisional", r"provisional listing",
     r"relació definitiva", r"relación definitiva", r"resultat provisional", r"resultado provisional",
-    r"resultat definitiu", r"resultado definitivo", r"aprovats", r"aprobados",
-    r"qualificacions", r"calificaciones", r"acta sessió", r"acta de la sessió", r"valoració de mèrits",
+    r"resultat definitiu", r"resultado definitivo", r"resultat \d", r"resultado \d",
+    r"data \d", r"data del", r"fecha del", r"recurs d'alçada", r"recurso de alzada",
+    r"desestimació", r"llista d'admesos", r"lista de admitidos", r"admesos i exclosos",
+    r"admitidos y excluidos", r"tribunal qualificador", r"constitució del tribunal",
+    r"baremació", r"aprovats", r"aprobados", r"qualificacions", r"calificaciones",
+    r"acta sessió", r"acta de la sessió", r"valoració de mèrits",
     r"citació", r"citación", r"revisió examen", r"revisió exercici", r"finalització procés",
     r"finalización proceso", r"comissió de serveis", r"comisión de servicios",
     r"nomenament", r"nombramiento", r"promoció interna", r"promoción interna",
@@ -182,12 +175,12 @@ EXCLOURES = [
 ETIQUETES_MENU_GENERIQUES = {
     "convocatòries", "convocatorias", "borsa de treball", "oposicions",
     "treballa amb nosaltres", "ocupació", "personal investigador",
-    "fons europeus", "estadísticas", "estadístiques", "recursos humans"
+    "fons europeus", "estadísticas", "estadístiques", "recursos humans",
+    "novetats", "borses temporals"
 }
 
 PATRO_UBICACIO = re.compile(r"\b(" + "|".join(re.escape(x) for x in NOMS_TERRITORI_I_ENS) + r")\b", re.I)
 PATRO_OCUPACIO = re.compile(r"(" + "|".join(OCUPACIO) + r")", re.I)
-PATRO_PERFIL = re.compile(r"(" + "|".join(PERFILS) + r")", re.I)
 PATRO_TITULACIO_EXCLOSA = re.compile(r"(" + "|".join(TITULACIONS_EXCLOSES) + r")", re.I)
 PATRO_EXCLOURE = re.compile(r"(" + "|".join(EXCLOURES) + r")", re.I)
 PATRO_IMAS = re.compile(r"\b(imas|1232767)\b", re.I)
@@ -232,10 +225,9 @@ def es_rellevant(text: str, es_local_mallorca: bool = False) -> bool:
     if PATRO_IMAS.search(t):
         return True
 
-    compleix_ocupacio_i_perfil = bool(PATRO_OCUPACIO.search(t) and PATRO_PERFIL.search(t))
     if es_local_mallorca:
-        return compleix_ocupacio_i_perfil
-    return bool(PATRO_UBICACIO.search(t) and compleix_ocupacio_i_perfil)
+        return bool(PATRO_OCUPACIO.search(t))
+    return bool(PATRO_UBICACIO.search(t) and PATRO_OCUPACIO.search(t))
 
 
 def desa_convocatoria(cur, codi, font, entitat, titol, estat, url):
@@ -279,11 +271,10 @@ def extreu_fitxa_detall(item: tuple):
                     cos_net = re.sub(r"\s+", " ", contenidor.get_text(" ", strip=True))
                     text_complet = f"{titol} {cos_net[:2500]}"
 
-                    # Segona passada de filtratge damunt el cos complet de l'oferta
                     if PATRO_EXCLOURE.search(cos_net[:2500]) or PATRO_TITULACIO_EXCLOSA.search(cos_net[:2500]):
                         return None
 
-                    if len(titol) < 85 or "anunci de la convocatòria" in titol.lower():
+                    if len(titol) < 95 or "anunci de la convocatòria" in titol.lower():
                         paragrafs = [
                             re.sub(r"\s+", " ", p.get_text(" ", strip=True))
                             for p in contenidor.find_all(["p", "dd", "li"])
@@ -418,7 +409,7 @@ def consulta_boib(conn, any_actual: int):
             if not pagines_seccio:
                 pagines_seccio = [url_edicio]
 
-            for url_sec in pagines_seccio[:4]:
+            for url_sec in pagines_seccio[:6]:
                 r_s = requests.get(url_sec, headers=HEADERS_HTTP, timeout=15)
                 soup_s = BeautifulSoup(r_s.text, "html.parser")
                 for tag in soup_s(["nav", "header", "footer"]):
@@ -527,7 +518,7 @@ def main():
     if totes:
         fitxes = []
         with ThreadPoolExecutor(max_workers=6) as executor:
-            futurs = [executor.submit(extreu_fitxa_detall, item) for item in totes[:30]]
+            futurs = [executor.submit(extreu_fitxa_detall, item) for item in totes[:35]]
             for futur in as_completed(futurs):
                 resultat = futur.result()
                 if resultat is not None:
