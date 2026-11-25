@@ -94,7 +94,7 @@ ENTITATS_PUBLIQUES = [
     ("PalmaActiva", "https://web.palmactiva.cat/"),
     ("EMAYA Palma", "https://www.emaya.es/"),
     ("SMAP Palma", "https://smap.palma.es/"),
-    ("UIB Personal / Recerca", "https://www.uib.cat/"),
+    ("UIB Investigació Convocatòries", "https://investigacio.uib.cat/Contractacio/Convocatories-vigents/"),
     ("FUEIB Ofertes", "https://fueib.org/"),
     ("IMEDEA (CSIC-UIB)", "https://imedea.uib-csic.es/"),
     ("SOCIB", "https://www.socib.es/"),
@@ -109,7 +109,7 @@ ENTITATS_PUBLIQUES = [
     ("Fundació Deixalles", "https://www.deixalles.org/"),
 ]
 
-# 3. FILTRES AFINATS DE TERRITORI, PERFILS I EXCLUSIONS
+# 3. FILTRES DE DOBLE CLAU: (1) ÉS UNA OFERTA D'OCUPACIÓ + (2) ENCAIXA AMB EL TEU PERFIL
 NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mallorca", "illes balears", "islas baleares", "caib", "imas", "1232767",
     "consell de mallorca", "ib-salut", "ibsalut", "ibavi", "abaqua", "ibanat",
@@ -118,39 +118,79 @@ NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mancomunitat des raiguer", "mancomunitat del migjorn", "mancomunitat del nord", "tramuntana"
 ]
 
-PERFILS = [
-    r"geograf", r"sociolog", r"\bsig\b", r"\bgis\b", r"cartograf",
-    r"urbanism", r"habitatge", r"vivienda", r"mobilitat", r"movilidad",
-    r"demograf", r"estadístic", r"enquest", r"investigador",
-    r"polítiques públiques", r"políticas públicas", r"projectes europeus", r"fons europeus",
-    r"administratiu", r"administrativo", r"tècnic", r"técnico",
-    r"titulat superior", r"titulat mitjà", r"\ba1\b", r"\ba2\b", r"\bc1\b",
-    r"borsí", r"borsa de treball", r"bolsa de trabajo", r"bolsa de empleo",
-    r"convocatòria", r"convocatoria", r"oposic", r"procés selectiu", r"proceso selectivo",
-    r"procediment selectiu", r"procedimiento selectivo", r"crida pública", r"oferta de treball"
+# Clau 1: Ha d'indicar explícitament que és un procés selectiu, borsí, oposició o oferta de feina
+OCUPACIO = [
+    r"bors[íia]", r"borsa de treball", r"bolsa de trabajo", r"bolsa de empleo",
+    r"oposic", r"concurs[- ]oposic", r"procés selectiu", r"proceso selectivo",
+    r"procediment selectiu", r"procedimiento selectivo", r"oferta de treball",
+    r"oferta d'ocupació", r"oferta de empleo", r"contractació de personal",
+    r"contratación de personal", r"provisió d'un lloc", r"provisión de un puesto",
+    r"cobertura de \d+ pla", r"cobertura d'una pla", r"nova convocatòria",
+    r"anunci de la convocatòria", r"bases i convocatòria", r"bases de la convocatòria"
 ]
 
-EXCLOURES = [
-    r"\bc2\b", r"auxiliar d'infermeria", r"auxiliar de enfermería", r"tcae", r"celador",
-    r"subaltern", r"ordenança", r"conserge", r"peó", r"operari", r"brigada",
-    r"policia local", r"policía local", r"bomber", r"bombero", r"socorrista",
-    r"llista provisional", r"lista provisional", r"llista definitiva", r"lista definitiva",
-    r"resultat definitiu", r"resultado definitivo", r"aprovats", r"aprobados",
-    r"qualificacions", r"calificaciones", r"nomenament", r"nombramiento",
-    r"adjudicació", r"adjudicación", r"promoció interna", r"promoción interna",
-    r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella",
-    r"les meves dades", r"protecció de dades", r"sessió ordinària", r"sessió extraordinària",
-    r"del ple\b", r"del pleno\b", r"colònies felines", r"subvenció", r"subvencions",
-    r"subvenciones", r"jornada informativa", r"taules salarials", r"permisos i llicències",
-    r"requeriments tècnics", r"tràmits administratius", r"organització estadística",
-    r"enllaços estadístics", r"inventari estadístic", r"portal estadístic",
-    r"programa anual d'estadística", r"plan de estadística", r"pla d'estadística",
-    r"secció iii", r"secció i\b", r"secció iv"
+# Clau 2: Ha d'encaixar amb Geografia, Ciències Socials, Territori, SIG o Administració general (A1/A2/C1)
+PERFILS = [
+    r"ge[òo]graf", r"geografia", r"soci[òo]leg", r"sociologia", r"\bsig\b", r"\bgis\b",
+    r"cartograf", r"territori", r"urbanism", r"habitatge", r"vivienda",
+    r"mobilitat", r"movilidad", r"demograf", r"estadístic", r"enquest",
+    r"recerca", r"investigaci", r"polítiques públiques", r"políticas públicas",
+    r"projectes europeus", r"fons europeus", r"medi ambient", r"medio ambiente",
+    r"administratiu", r"administrativo", r"administració general", r"administración general",
+    r"gestió", r"gestión", r"tècnic", r"técnico", r"titulat superior", r"titulat mitjà",
+    r"\ba1\b", r"\ba2\b", r"\bc1\b", r"\btag\b", r"anunci de la convocatòria"
 ]
+
+# Titulacions específiques alienes al Grau en Geografia / Administració general
+TITULACIONS_EXCLOSES = [
+    r"grau en dret", r"grado en derecho", r"llicenciatura en dret", r"licenciatura en derecho",
+    r"tècnic/a superior jurídic", r"tècnic superior jurídic", r"técnico superior jurídico",
+    r"assessor/a jurídic", r"asesor jurídico", r"lletrat", r"letrado", r"advocat",
+    r"sanitari", r"sanitario", r"metge", r"médico", r"infermer", r"enfermer",
+    r"auxiliar d'infermeria", r"tcae", r"celador", r"fisioterapeuta", r"farmacèutic",
+    r"veterinari", r"psic[òo]leg", r"psicología", r"treballador/a social", r"treballador social",
+    r"trabajador social", r"treballador/a familiar", r"educador/a social", r"educació infantil",
+    r"educación infantil", r"mestre", r"maestro", r"professor", r"profesor", r"docent", r"\bpdi\b",
+    r"arquitect", r"enginyer", r"ingenier", r"aparellador", r"delineant",
+    r"economista", r"interventor", r"tresorer", r"tesorero", r"comptabilitat",
+    r"informàtic", r"informático", r"programador", r"desenvolupador",
+    r"policia local", r"policía local", r"bomber", r"bombero", r"socorrista",
+    r"oficial 1", r"manteniment", r"mantenimiento", r"electricista", r"lampista",
+    r"fuster", r"jardiner", r"netej", r"conserge", r"subaltern", r"ordenança", r"peó", r"operari", r"brigada"
+]
+
+# Exclusions de tràmits intermedis, licitacions, notícies, memòries i altres illes
+EXCLOURES = [
+    r"\bc2\b", r"licit", r"contracte de servei", r"contrato de servicio", r"plecs", r"pliegos",
+    r"pressupost base", r"perfil del contractant", r"adjudicaci", r"adjudicación",
+    r"llista provisional", r"lista provisional", r"llista definitiva", r"lista definitiva",
+    r"relació provisional", r"relación provisional", r"provisional listing",
+    r"relació definitiva", r"relación definitiva", r"resultat provisional", r"resultado provisional",
+    r"resultat definitiu", r"resultado definitivo", r"aprovats", r"aprobados",
+    r"qualificacions", r"calificaciones", r"acta sessió", r"acta de la sessió", r"valoració de mèrits",
+    r"citació", r"citación", r"revisió examen", r"revisió exercici", r"finalització procés",
+    r"finalización proceso", r"comissió de serveis", r"comisión de servicios",
+    r"nomenament", r"nombramiento", r"promoció interna", r"promoción interna",
+    r"memòria", r"memoria", r"expropiaci", r"expropiación", r"cuentas anuales", r"comptes anuals",
+    r"auditoría", r"estadístiques", r"estadísticas", r"seminari", r"jornada", r"premi",
+    r"subvenc", r"xec formació", r"formació", r"estudiants", r"notícies", r"noticias",
+    r"sessió ordinària", r"sessió extraordinària", r"del ple\b", r"del pleno\b",
+    r"colònies felines", r"taules salarials", r"permisos i llicències", r"protecció de dades",
+    r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella"
+]
+
+ETIQUETES_MENU_GENERIQUES = {
+    "convocatòries", "convocatorias", "borsa de treball", "oposicions",
+    "treballa amb nosaltres", "ocupació", "personal investigador",
+    "fons europeus", "estadísticas", "estadístiques", "recursos humans"
+}
 
 PATRO_UBICACIO = re.compile(r"\b(" + "|".join(re.escape(x) for x in NOMS_TERRITORI_I_ENS) + r")\b", re.I)
+PATRO_OCUPACIO = re.compile(r"(" + "|".join(OCUPACIO) + r")", re.I)
 PATRO_PERFIL = re.compile(r"(" + "|".join(PERFILS) + r")", re.I)
+PATRO_TITULACIO_EXCLOSA = re.compile(r"(" + "|".join(TITULACIONS_EXCLOSES) + r")", re.I)
 PATRO_EXCLOURE = re.compile(r"(" + "|".join(EXCLOURES) + r")", re.I)
+PATRO_IMAS = re.compile(r"\b(imas|1232767)\b", re.I)
 
 
 def envia_telegram_blocs(blocs_html: list[str]):
@@ -184,12 +224,18 @@ def envia_telegram_blocs(blocs_html: list[str]):
 
 
 def es_rellevant(text: str, es_local_mallorca: bool = False) -> bool:
-    t = text.lower()
-    if PATRO_EXCLOURE.search(t):
+    t = text.strip().lower()
+    if t in ETIQUETES_MENU_GENERIQUES:
         return False
+    if PATRO_EXCLOURE.search(t) or PATRO_TITULACIO_EXCLOSA.search(t):
+        return False
+    if PATRO_IMAS.search(t):
+        return True
+
+    compleix_ocupacio_i_perfil = bool(PATRO_OCUPACIO.search(t) and PATRO_PERFIL.search(t))
     if es_local_mallorca:
-        return bool(PATRO_PERFIL.search(t) or "1232767" in t or "imas" in t)
-    return bool(PATRO_UBICACIO.search(t) and PATRO_PERFIL.search(t))
+        return compleix_ocupacio_i_perfil
+    return bool(PATRO_UBICACIO.search(t) and compleix_ocupacio_i_perfil)
 
 
 def desa_convocatoria(cur, codi, font, entitat, titol, estat, url):
@@ -212,7 +258,7 @@ def desa_log(cur, font, identificador, estat, obs=""):
     """, (datetime.date.today(), font, identificador, estat, obs[:300]))
 
 
-def extreu_fitxa_detall(item: tuple) -> dict:
+def extreu_fitxa_detall(item: tuple):
     codi, entitat, titol, url = item
     text_complet = titol
     resum_extra = ""
@@ -232,8 +278,12 @@ def extreu_fitxa_detall(item: tuple) -> dict:
                 if contenidor:
                     cos_net = re.sub(r"\s+", " ", contenidor.get_text(" ", strip=True))
                     text_complet = f"{titol} {cos_net[:2500]}"
-                    # Si el títol és genèric o curt, agafa un fragment descriptiu real
-                    if len(titol) < 75 or "anunci de la convocatòria" in titol.lower():
+
+                    # Segona passada de filtratge damunt el cos complet de l'oferta
+                    if PATRO_EXCLOURE.search(cos_net[:2500]) or PATRO_TITULACIO_EXCLOSA.search(cos_net[:2500]):
+                        return None
+
+                    if len(titol) < 85 or "anunci de la convocatòria" in titol.lower():
                         paragrafs = [
                             re.sub(r"\s+", " ", p.get_text(" ", strip=True))
                             for p in contenidor.find_all(["p", "dd", "li"])
@@ -247,14 +297,12 @@ def extreu_fitxa_detall(item: tuple) -> dict:
         except Exception:
             pass
 
-    # Detecció de Grup / Titulació
     grup_match = re.search(
         r"\b(subgrup\s*[ABC][12]|grup\s*[ABC][12]|[ABC][12]|titulat\s+superior|titulat\s+mitjà|grau\s+universitari|batxillerat)\b",
         text_complet, re.I
     )
     grup = grup_match.group(1).upper() if grup_match else ""
 
-    # Detecció de Tipus de procés
     tipus = ""
     if re.search(r"bors[íia]|bolsa", text_complet, re.I):
         tipus = "Borsí"
@@ -264,10 +312,7 @@ def extreu_fitxa_detall(item: tuple) -> dict:
         tipus = "Oposició"
     elif re.search(r"inter[íi]|temporal", text_complet, re.I):
         tipus = "Interí / Temporal"
-    elif re.search(r"licitaci|contracte", text_complet, re.I):
-        tipus = "Licitació / Contracte"
 
-    # Detecció de Termini
     termini_match = re.search(
         r"(termini[^\.]{5,85}|fins al \d{1,2}[/-]\d{1,2}[/-]\d{2,4}|plazo[^\.]{5,85}|\d{1,2}\s+dies\s+(?:hàbils|naturals))",
         text_complet, re.I
@@ -362,7 +407,6 @@ def consulta_boib(conn, any_actual: int):
             r_ed = requests.get(url_edicio, headers=HEADERS_HTTP, timeout=20)
             soup_ed = BeautifulSoup(r_ed.text, "html.parser")
 
-            # Entra dins Secció II (Oposicions i concursos) i Secció V (Anuncis)
             pagines_seccio = []
             for a_sec in soup_ed.find_all("a", href=True):
                 href = a_sec["href"]
@@ -377,6 +421,8 @@ def consulta_boib(conn, any_actual: int):
             for url_sec in pagines_seccio[:4]:
                 r_s = requests.get(url_sec, headers=HEADERS_HTTP, timeout=15)
                 soup_s = BeautifulSoup(r_s.text, "html.parser")
+                for tag in soup_s(["nav", "header", "footer"]):
+                    tag.decompose()
                 for a_tag in soup_s.find_all("a", href=True):
                     text = re.sub(r"\s+", " ", a_tag.get_text(" ", strip=True))
                     if len(text) < 25:
@@ -407,18 +453,20 @@ def descarrega_portal(nom: str, url: str):
         if r.status_code != 200:
             return nom, "ERROR", f"HTTP {r.status_code}", []
         soup = BeautifulSoup(r.text, "html.parser")
+        for tag in soup(["nav", "header", "footer"]):
+            tag.decompose()
+
         candidats = []
         vists = set()
 
         for a in soup.find_all("a", href=True):
             link_text = re.sub(r"\s+", " ", a.get_text(" ", strip=True))
-            if len(link_text) < 12:
+            if len(link_text) < 15:
                 continue
             enllac = urljoin(url, a["href"])
             if enllac.startswith(("mailto:", "javascript:")) or enllac.endswith("#"):
                 continue
 
-            # Agafa el context sencer de la fila o targeta si no té més de 3 enllaços
             text_complet = link_text
             parent = a.find_parent(["tr", "li", "article"])
             if parent and len(parent.find_all("a")) <= 3:
@@ -475,41 +523,46 @@ def main():
     novetats_municipis = rastreja_portals(conn, MUNICIPIS_53, "AJUNTAMENT")
 
     totes = novetats_boe + novetats_boib + novetats_entitats + novetats_municipis
-    print(f"Total novetats detectades: {len(totes)}")
 
     if totes:
         fitxes = []
         with ThreadPoolExecutor(max_workers=6) as executor:
             futurs = [executor.submit(extreu_fitxa_detall, item) for item in totes[:30]]
             for futur in as_completed(futurs):
-                fitxes.append(futur.result())
+                resultat = futur.result()
+                if resultat is not None:
+                    fitxes.append(resultat)
 
-        blocs = [f"📌 <b>Rastreig Integral Mallorca · {avui.strftime('%d/%m/%Y')}</b> ({len(totes)} novetats)"]
-        for f in fitxes:
-            alerta = "🚨 <b>ALERTA IMAS C1!</b> " if ("imas" in (f["entitat"] + f["titol"]).lower() or "1232767" in f["titol"]) else ""
-            etiquetes = []
-            if f["tipus"]:
-                etiquetes.append(f"📋 <b>{html.escape(f['tipus'])}</b>")
-            if f["grup"]:
-                etiquetes.append(f"🎓 <b>Grup {html.escape(f['grup'])}</b>")
-            if f["es_pdf"]:
-                etiquetes.append("📄 <i>PDF directe</i>")
+        print(f"Total novetats netes enviades: {len(fitxes)}")
+        if fitxes:
+            blocs = [f"📌 <b>Rastreig Integral Mallorca · {avui.strftime('%d/%m/%Y')}</b> ({len(fitxes)} ofertes filtrades)"]
+            for f in fitxes:
+                alerta = "🚨 <b>ALERTA IMAS C1!</b> " if PATRO_IMAS.search(f["entitat"] + " " + f["titol"]) else ""
+                etiquetes = []
+                if f["tipus"]:
+                    etiquetes.append(f"📋 <b>{html.escape(f['tipus'])}</b>")
+                if f["grup"]:
+                    etiquetes.append(f"🎓 <b>Grup {html.escape(f['grup'])}</b>")
+                if f["es_pdf"]:
+                    etiquetes.append("📄 <i>PDF directe</i>")
 
-            linia_meta = (" · ".join(etiquetes) + "\n") if etiquetes else ""
-            linia_resum = f"<i>{html.escape(f['resum_extra'])}</i>\n" if f["resum_extra"] else ""
-            linia_termini = f"⏳ <b>Termini:</b> {html.escape(f['termini'])}\n" if f["termini"] else ""
+                linia_meta = (" · ".join(etiquetes) + "\n") if etiquetes else ""
+                linia_resum = f"<i>{html.escape(f['resum_extra'])}</i>\n" if f["resum_extra"] else ""
+                linia_termini = f"⏳ <b>Termini:</b> {html.escape(f['termini'])}\n" if f["termini"] else ""
 
-            targeta = (
-                f"{alerta}🏛️ <b>{html.escape(f['entitat'])}</b>\n"
-                f"{linia_meta}"
-                f"{html.escape(f['titol'])}\n"
-                f"{linia_resum}"
-                f"{linia_termini}"
-                f"🔗 <a href=\"{html.escape(f['url'], quote=True)}\">Obrir convocatòria</a>"
-            )
-            blocs.append(targeta)
+                targeta = (
+                    f"{alerta}🏛️ <b>{html.escape(f['entitat'])}</b>\n"
+                    f"{linia_meta}"
+                    f"{html.escape(f['titol'])}\n"
+                    f"{linia_resum}"
+                    f"{linia_termini}"
+                    f"🔗 <a href=\"{html.escape(f['url'], quote=True)}\">Obrir convocatòria</a>"
+                )
+                blocs.append(targeta)
 
-        envia_telegram_blocs(blocs)
+            envia_telegram_blocs(blocs)
+    else:
+        print("Total novetats detectades: 0")
 
     conn.close()
 
