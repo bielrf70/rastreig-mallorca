@@ -20,11 +20,7 @@ jobs:
       - name: Instal·la dependències i navegador
         run: |
           pip install requests beautifulsoup4 psycopg2-binary playwright
-          playwright install chromium
+          playwright install --with-deps chromium
 
-      - name: Executa rastrejador contra Neon
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python rastreig_mallorca.py
+      - name: Executa auditoria de patrons
+        run: python auditoria_patrons.py
