@@ -127,7 +127,7 @@ PERFILS = [
     r"titulat superior", r"titulat mitjà", r"\ba1\b", r"\ba2\b", r"\bc1\b",
     r"borsí", r"borsa de treball", r"bolsa de trabajo", r"bolsa de empleo",
     r"convocatòria", r"convocatoria", r"oposic", r"procés selectiu", r"proceso selectivo",
-    r"procediment selectiu", r"procedimiento selectivo", r"crida pública"
+    r"procediment selectiu", r"procedimiento selectivo", r"crida pública", r"oferta de treball"
 ]
 
 EXCLOURES = [
@@ -140,8 +140,12 @@ EXCLOURES = [
     r"adjudicació", r"adjudicación", r"promoció interna", r"promoción interna",
     r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella",
     r"les meves dades", r"protecció de dades", r"sessió ordinària", r"sessió extraordinària",
-    r"del ple\b", r"del pleno\b", r"colònies felines", r"subvencions", r"subvenciones",
-    r"jornada informativa", r"taules salarials", r"permisos i llicències"
+    r"del ple\b", r"del pleno\b", r"colònies felines", r"subvenció", r"subvencions",
+    r"subvenciones", r"jornada informativa", r"taules salarials", r"permisos i llicències",
+    r"requeriments tècnics", r"tràmits administratius", r"organització estadística",
+    r"enllaços estadístics", r"inventari estadístic", r"portal estadístic",
+    r"programa anual d'estadística", r"plan de estadística", r"pla d'estadística",
+    r"secció iii", r"secció i\b", r"secció iv"
 ]
 
 PATRO_UBICACIO = re.compile(r"\b(" + "|".join(re.escape(x) for x in NOMS_TERRITORI_I_ENS) + r")\b", re.I)
@@ -149,18 +153,34 @@ PATRO_PERFIL = re.compile(r"(" + "|".join(PERFILS) + r")", re.I)
 PATRO_EXCLOURE = re.compile(r"(" + "|".join(EXCLOURES) + r")", re.I)
 
 
-def envia_telegram(missatge_html: str):
+def envia_telegram_blocs(blocs_html: list[str]):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         print("Telegram no configurat.")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    resp = requests.post(url, json={
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": missatge_html[:4000],
-        "parse_mode": "HTML",
-        "disable_web_page_preview": True
-    }, timeout=15)
-    print("Resposta Telegram:", resp.status_code, resp.text[:200])
+    missatge_actual = ""
+
+    for bloc in blocs_html:
+        if len(missatge_actual) + len(bloc) + 2 > 3800:
+            resp = requests.post(url, json={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": missatge_actual,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True
+            }, timeout=15)
+            print("Resposta Telegram (bloc):", resp.status_code)
+            missatge_actual = bloc
+        else:
+            missatge_actual = f"{missatge_actual}\n\n{bloc}" if missatge_actual else bloc
+
+    if missatge_actual:
+        resp = requests.post(url, json={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": missatge_actual,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }, timeout=15)
+        print("Resposta Telegram (final):", resp.status_code, resp.text[:160])
 
 
 def es_rellevant(text: str, es_local_mallorca: bool = False) -> bool:
@@ -190,6 +210,81 @@ def desa_log(cur, font, identificador, estat, obs=""):
         ON CONFLICT (data_execucio, font, identificador_edicio)
         DO UPDATE SET estat = EXCLUDED.estat, observacions = EXCLUDED.observacions;
     """, (datetime.date.today(), font, identificador, estat, obs[:300]))
+
+
+def extreu_fitxa_detall(item: tuple) -> dict:
+    codi, entitat, titol, url = item
+    text_complet = titol
+    resum_extra = ""
+    es_pdf = url.lower().endswith(".pdf") or "/preview-document/" in url.lower()
+
+    if not es_pdf and url.startswith("http"):
+        try:
+            r = requests.get(url, headers=HEADERS_HTTP, timeout=8)
+            ctype = r.headers.get("Content-Type", "").lower()
+            if "application/pdf" in ctype:
+                es_pdf = True
+            elif r.status_code == 200 and "text/html" in ctype:
+                soup = BeautifulSoup(r.text, "html.parser")
+                for tag in soup(["script", "style", "nav", "header", "footer"]):
+                    tag.decompose()
+                contenidor = soup.find("main") or soup.find("article") or soup.body
+                if contenidor:
+                    cos_net = re.sub(r"\s+", " ", contenidor.get_text(" ", strip=True))
+                    text_complet = f"{titol} {cos_net[:2500]}"
+                    # Si el títol és genèric o curt, agafa un fragment descriptiu real
+                    if len(titol) < 75 or "anunci de la convocatòria" in titol.lower():
+                        paragrafs = [
+                            re.sub(r"\s+", " ", p.get_text(" ", strip=True))
+                            for p in contenidor.find_all(["p", "dd", "li"])
+                        ]
+                        utils = [
+                            p for p in paragrafs
+                            if 45 <= len(p) <= 350 and "cookie" not in p.lower() and "política" not in p.lower()
+                        ]
+                        if utils:
+                            resum_extra = utils[0][:260]
+        except Exception:
+            pass
+
+    # Detecció de Grup / Titulació
+    grup_match = re.search(
+        r"\b(subgrup\s*[ABC][12]|grup\s*[ABC][12]|[ABC][12]|titulat\s+superior|titulat\s+mitjà|grau\s+universitari|batxillerat)\b",
+        text_complet, re.I
+    )
+    grup = grup_match.group(1).upper() if grup_match else ""
+
+    # Detecció de Tipus de procés
+    tipus = ""
+    if re.search(r"bors[íia]|bolsa", text_complet, re.I):
+        tipus = "Borsí"
+    elif re.search(r"concurs[- ]oposic", text_complet, re.I):
+        tipus = "Concurs-oposició"
+    elif re.search(r"oposic", text_complet, re.I):
+        tipus = "Oposició"
+    elif re.search(r"inter[íi]|temporal", text_complet, re.I):
+        tipus = "Interí / Temporal"
+    elif re.search(r"licitaci|contracte", text_complet, re.I):
+        tipus = "Licitació / Contracte"
+
+    # Detecció de Termini
+    termini_match = re.search(
+        r"(termini[^\.]{5,85}|fins al \d{1,2}[/-]\d{1,2}[/-]\d{2,4}|plazo[^\.]{5,85}|\d{1,2}\s+dies\s+(?:hàbils|naturals))",
+        text_complet, re.I
+    )
+    termini = termini_match.group(1).strip().capitalize() if termini_match else ""
+
+    return {
+        "codi": codi,
+        "entitat": entitat,
+        "titol": titol,
+        "url": url,
+        "grup": grup,
+        "tipus": tipus,
+        "termini": termini,
+        "resum_extra": resum_extra,
+        "es_pdf": es_pdf,
+    }
 
 
 def consulta_boe(conn, data_str: str):
@@ -234,7 +329,7 @@ def consulta_boe(conn, data_str: str):
                             if es_rellevant(f"{nom_dep} {titol}", es_local_mallorca=False):
                                 estat = "OBERTA" if ("convocatoria" in titol.lower() or "plazo" in titol.lower()) else "ANUNCI"
                                 if desa_convocatoria(cur, id_boe, "BOE", nom_dep, titol, estat, url_html):
-                                    novetats.append((id_boe, nom_dep, titol, url_html))
+                                    novetats.append((id_boe, f"BOE · {nom_dep}", titol, url_html))
 
         desa_log(cur, "BOE", f"BOE-{data_str}", "REVISAT", f"Noves: {len(novetats)}")
         conn.commit()
@@ -267,16 +362,37 @@ def consulta_boib(conn, any_actual: int):
             r_ed = requests.get(url_edicio, headers=HEADERS_HTTP, timeout=20)
             soup_ed = BeautifulSoup(r_ed.text, "html.parser")
 
-            for a_tag in soup_ed.find_all("a", href=True):
-                text = a_tag.get_text(" ", strip=True)
-                if len(text) < 15:
-                    continue
-                if es_rellevant(text, es_local_mallorca=True):
-                    link = urljoin("https://www.caib.es", a_tag["href"])
-                    h = hashlib.md5(f"{num_edicio}:{text}".encode()).hexdigest()[:10]
-                    codi = f"BOIB-{any_actual}-{num_edicio}-{h}"
-                    if desa_convocatoria(cur, codi, "BOIB", "CAIB / Ens Locals IB", text, "PUBLICAT_BOIB", link):
-                        novetats.append((f"BOIB {num_edicio}", "BOIB", text[:240], link))
+            # Entra dins Secció II (Oposicions i concursos) i Secció V (Anuncis)
+            pagines_seccio = []
+            for a_sec in soup_ed.find_all("a", href=True):
+                href = a_sec["href"]
+                if re.search(r"seccio-ii-|oposicions-i-concursos|seccio-v-", href, re.I):
+                    full_sec = urljoin("https://www.caib.es", href)
+                    if full_sec not in pagines_seccio:
+                        pagines_seccio.append(full_sec)
+
+            if not pagines_seccio:
+                pagines_seccio = [url_edicio]
+
+            for url_sec in pagines_seccio[:4]:
+                r_s = requests.get(url_sec, headers=HEADERS_HTTP, timeout=15)
+                soup_s = BeautifulSoup(r_s.text, "html.parser")
+                for a_tag in soup_s.find_all("a", href=True):
+                    text = re.sub(r"\s+", " ", a_tag.get_text(" ", strip=True))
+                    if len(text) < 25:
+                        continue
+                    parent = a_tag.find_parent(["li", "article", "div"])
+                    if parent and len(parent.find_all("a")) <= 3:
+                        p_text = re.sub(r"\s+", " ", parent.get_text(" ", strip=True))
+                        if len(text) < len(p_text) <= 450:
+                            text = p_text
+
+                    if es_rellevant(text, es_local_mallorca=True):
+                        link = urljoin("https://www.caib.es", a_tag["href"])
+                        h = hashlib.md5(f"{num_edicio}:{text[:180]}".encode()).hexdigest()[:10]
+                        codi = f"BOIB-{num_edicio}-{h}"
+                        if desa_convocatoria(cur, codi, "BOIB", f"BOIB núm. {num_edicio}", text, "PUBLICAT_BOIB", link):
+                            novetats.append((codi, f"BOIB núm. {num_edicio}", text[:340], link))
 
             desa_log(cur, "BOIB", f"BOIB-{any_actual}-{num_edicio}", "REVISAT", f"Noves: {len(novetats)}")
         except Exception as e:
@@ -292,12 +408,32 @@ def descarrega_portal(nom: str, url: str):
             return nom, "ERROR", f"HTTP {r.status_code}", []
         soup = BeautifulSoup(r.text, "html.parser")
         candidats = []
+        vists = set()
+
         for a in soup.find_all("a", href=True):
-            text = a.get_text(" ", strip=True)
-            if len(text) >= 15 and es_rellevant(text, es_local_mallorca=True):
-                enllac = urljoin(url, a["href"])
-                if not enllac.startswith("mailto:"):
-                    candidats.append((text, enllac))
+            link_text = re.sub(r"\s+", " ", a.get_text(" ", strip=True))
+            if len(link_text) < 12:
+                continue
+            enllac = urljoin(url, a["href"])
+            if enllac.startswith(("mailto:", "javascript:")) or enllac.endswith("#"):
+                continue
+
+            # Agafa el context sencer de la fila o targeta si no té més de 3 enllaços
+            text_complet = link_text
+            parent = a.find_parent(["tr", "li", "article"])
+            if parent and len(parent.find_all("a")) <= 3:
+                p_text = re.sub(r"\s+", " ", parent.get_text(" ", strip=True))
+                if len(link_text) + 10 < len(p_text) <= 420:
+                    text_complet = p_text
+
+            clau = f"{text_complet[:140]}|{enllac}"
+            if clau in vists:
+                continue
+            vists.add(clau)
+
+            if es_rellevant(text_complet, es_local_mallorca=True):
+                candidats.append((text_complet, enllac))
+
         return nom, "REVISAT", "", candidats
     except Exception as e:
         return nom, "ERROR", str(e)[:120], []
@@ -318,10 +454,10 @@ def rastreja_portals(conn, llista_fonts, tipus_font):
                 continue
             trobades_font = 0
             for text, enllac in candidats:
-                h = hashlib.md5(f"{nom}:{text}:{enllac}".encode()).hexdigest()[:12]
+                h = hashlib.md5(f"{nom}:{text[:180]}:{enllac}".encode()).hexdigest()[:12]
                 codi = f"{tipus_font}-{h}"
                 if desa_convocatoria(cur, codi, tipus_font, nom, text, "DETECTADA_PORTAL", enllac):
-                    novetats.append((codi, nom, text[:240], enllac))
+                    novetats.append((codi, nom, text[:340], enllac))
                     trobades_font += 1
             desa_log(cur, tipus_font, nom, "REVISAT", f"Noves: {trobades_font}")
         conn.commit()
@@ -342,14 +478,38 @@ def main():
     print(f"Total novetats detectades: {len(totes)}")
 
     if totes:
-        linies = [f"📌 <b>Rastreig Integral Mallorca · {avui.strftime('%d/%m/%Y')}</b>\n"]
-        for codi, entitat, titol, url in totes[:25]:
-            alerta = "🚨 <b>ALERTA IMAS C1!</b> " if ("imas" in (entitat + titol).lower() or "1232767" in titol) else ""
-            entitat_segura = html.escape(entitat)
-            titol_segur = html.escape(titol)
-            url_segura = html.escape(url, quote=True)
-            linies.append(f"{alerta}<b>{entitat_segura}</b> (<code>{codi}</code>)\n{titol_segur}\n<a href=\"{url_segura}\">Veure fitxa</a>\n")
-        envia_telegram("\n".join(linies))
+        fitxes = []
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            futurs = [executor.submit(extreu_fitxa_detall, item) for item in totes[:30]]
+            for futur in as_completed(futurs):
+                fitxes.append(futur.result())
+
+        blocs = [f"📌 <b>Rastreig Integral Mallorca · {avui.strftime('%d/%m/%Y')}</b> ({len(totes)} novetats)"]
+        for f in fitxes:
+            alerta = "🚨 <b>ALERTA IMAS C1!</b> " if ("imas" in (f["entitat"] + f["titol"]).lower() or "1232767" in f["titol"]) else ""
+            etiquetes = []
+            if f["tipus"]:
+                etiquetes.append(f"📋 <b>{html.escape(f['tipus'])}</b>")
+            if f["grup"]:
+                etiquetes.append(f"🎓 <b>Grup {html.escape(f['grup'])}</b>")
+            if f["es_pdf"]:
+                etiquetes.append("📄 <i>PDF directe</i>")
+
+            linia_meta = (" · ".join(etiquetes) + "\n") if etiquetes else ""
+            linia_resum = f"<i>{html.escape(f['resum_extra'])}</i>\n" if f["resum_extra"] else ""
+            linia_termini = f"⏳ <b>Termini:</b> {html.escape(f['termini'])}\n" if f["termini"] else ""
+
+            targeta = (
+                f"{alerta}🏛️ <b>{html.escape(f['entitat'])}</b>\n"
+                f"{linia_meta}"
+                f"{html.escape(f['titol'])}\n"
+                f"{linia_resum}"
+                f"{linia_termini}"
+                f"🔗 <a href=\"{html.escape(f['url'], quote=True)}\">Obrir convocatòria</a>"
+            )
+            blocs.append(targeta)
+
+        envia_telegram_blocs(blocs)
 
     conn.close()
 
