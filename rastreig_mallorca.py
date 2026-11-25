@@ -109,7 +109,7 @@ ENTITATS_PUBLIQUES = [
     ("Fundació Deixalles", "https://www.deixalles.org/"),
 ]
 
-# 3. FILTRES COMPLETS DE TERRITORI, PERFILS I EXCLUSIONS
+# 3. FILTRES AFINATS DE TERRITORI, PERFILS I EXCLUSIONS
 NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mallorca", "illes balears", "islas baleares", "caib", "imas", "1232767",
     "consell de mallorca", "ib-salut", "ibsalut", "ibavi", "abaqua", "ibanat",
@@ -119,14 +119,15 @@ NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
 ]
 
 PERFILS = [
-    r"geograf", r"sociolog", r"\bsig\b", r"\bgis\b", r"cartograf", r"territori",
-    r"medi ambient", r"medio ambiente", r"urbanism", r"habitatge", r"vivienda",
-    r"mobilitat", r"movilidad", r"demograf", r"estadístic", r"dades", r"enquest",
-    r"recerca", r"investigaci", r"polítiques públiques", r"políticas públicas",
-    r"recursos humans", r"rrhh", r"projectes europeus", r"fons europeus",
-    r"administratiu", r"administrativo", r"gestió", r"gestión", r"tècnic", r"técnico",
+    r"geograf", r"sociolog", r"\bsig\b", r"\bgis\b", r"cartograf",
+    r"urbanism", r"habitatge", r"vivienda", r"mobilitat", r"movilidad",
+    r"demograf", r"estadístic", r"enquest", r"investigador",
+    r"polítiques públiques", r"políticas públicas", r"projectes europeus", r"fons europeus",
+    r"administratiu", r"administrativo", r"tècnic", r"técnico",
     r"titulat superior", r"titulat mitjà", r"\ba1\b", r"\ba2\b", r"\bc1\b",
-    r"borsí", r"bolsa", r"convocatòria", r"convocatoria", r"oposic"
+    r"borsí", r"borsa de treball", r"bolsa de trabajo", r"bolsa de empleo",
+    r"convocatòria", r"convocatoria", r"oposic", r"procés selectiu", r"proceso selectivo",
+    r"procediment selectiu", r"procedimiento selectivo", r"crida pública"
 ]
 
 EXCLOURES = [
@@ -134,9 +135,13 @@ EXCLOURES = [
     r"subaltern", r"ordenança", r"conserge", r"peó", r"operari", r"brigada",
     r"policia local", r"policía local", r"bomber", r"bombero", r"socorrista",
     r"llista provisional", r"lista provisional", r"llista definitiva", r"lista definitiva",
-    r"aprovats", r"aprobados", r"qualificacions", r"calificaciones", r"nomenament",
-    r"nombramiento", r"adjudicació", r"adjudicación", r"promoció interna", r"promoción interna",
-    r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella"
+    r"resultat definitiu", r"resultado definitivo", r"aprovats", r"aprobados",
+    r"qualificacions", r"calificaciones", r"nomenament", r"nombramiento",
+    r"adjudicació", r"adjudicación", r"promoció interna", r"promoción interna",
+    r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella",
+    r"les meves dades", r"protecció de dades", r"sessió ordinària", r"sessió extraordinària",
+    r"del ple\b", r"del pleno\b", r"colònies felines", r"subvencions", r"subvenciones",
+    r"jornada informativa", r"taules salarials", r"permisos i llicències"
 ]
 
 PATRO_UBICACIO = re.compile(r"\b(" + "|".join(re.escape(x) for x in NOMS_TERRITORI_I_ENS) + r")\b", re.I)
@@ -289,9 +294,10 @@ def descarrega_portal(nom: str, url: str):
         candidats = []
         for a in soup.find_all("a", href=True):
             text = a.get_text(" ", strip=True)
-            if len(text) >= 12 and es_rellevant(f"{nom} {text}", es_local_mallorca=True):
+            if len(text) >= 15 and es_rellevant(text, es_local_mallorca=True):
                 enllac = urljoin(url, a["href"])
-                candidats.append((text, enllac))
+                if not enllac.startswith("mailto:"):
+                    candidats.append((text, enllac))
         return nom, "REVISAT", "", candidats
     except Exception as e:
         return nom, "ERROR", str(e)[:120], []
