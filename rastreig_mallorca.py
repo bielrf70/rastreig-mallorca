@@ -114,7 +114,7 @@ ENTITATS_PUBLIQUES = [
     ("Fundació Deixalles", "https://www.deixalles.org/"),
 ]
 
-# 3. FILTRE ESTRUCTURAL: LLISTA BLANCA DE PERFIL + OBERTURA REAL + EXCLUSIÓ DE C2 I TRÀMITS TANCATS
+# 3. REGLES ESTRUCTURALS DERIVADES DE L'AUDITORIA
 NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mallorca", "illes balears", "islas baleares", "caib", "imas", "1232767",
     "consell de mallorca", "ib-salut", "ibsalut", "ibavi", "abaqua", "ibanat",
@@ -123,7 +123,7 @@ NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mancomunitat des raiguer", "mancomunitat del migjorn", "mancomunitat del nord", "tramuntana"
 ]
 
-# Llista blanca: NOMÉS passa el que encaixa amb el teu grau o amb Administració General A1/A2/C1
+# Perfils compatibles amb Geografia, Ciències Socials, Territori i Administració General A1/A2/C1
 LLISTA_BLANCA_PERFIL = [
     r"ge[òo]graf", r"geografia", r"geografía",
     r"soci[òo]leg", r"sociologia", r"sociología",
@@ -139,15 +139,40 @@ LLISTA_BLANCA_PERFIL = [
     r"gestió\s+administrativa", r"titulat(?:/da|-da|da)?\s+superior", r"titulat(?:/da|-da|da)?\s+mitj"
 ]
 
-# Indicador que és un procés selectiu o borsa (no necessari dins BOIB Secció II)
-INDICADOR_CONVOCATORIA = [
-    r"bors[íia]", r"borsa", r"bolsa", r"oposic", r"concurs", r"procés\s+selectiu",
-    r"proceso\s+selectivo", r"procediment\s+selectiu", r"procedimiento\s+selectivo",
-    r"convocatòria", r"convocatoria", r"bases", r"provisió", r"provisión",
-    r"cobertura", r"oferta\s+de\s+treball", r"contractació", r"termini", r"plazo"
+INDICADOR_OBERTURA = [
+    r"bases\s+(?:i\s+convocatòria|de\s+la\s+convocatòria|reguladores)",
+    r"convocatòria\s+(?:pública|de\s+procés|del\s+procediment|per\s+a\s+la\s+constitució|d['’]una\s+borsa)",
+    r"anunci\s+de\s+la\s+convocatòria", r"nova\s+convocatòria", r"obertura\s+(?:del\s+)?termini",
+    r"bors[íia]", r"borsa\s+de\s+treball", r"bolsa\s+de\s+trabajo", r"bolsa\s+de\s+empleo",
+    r"oposic", r"concurs[- ]oposic", r"procés\s+selectiu", r"proceso\s+selectivo",
+    r"procediment\s+selectiu", r"procedimiento\s+selectivo", r"provisió", r"provisión",
+    r"cobertura\s+de\s+(?:\d+|una)\s+pla", r"oferta\s+de\s+treball", r"contractació\s+de\s+personal"
 ]
 
-# Titulacions alienes o llocs C2/oficis que descarten automàticament l'oferta
+# Fases ja tancades o tràmits intermedis detectats a l'auditoria (Gestiona, Convoca, UIB, BOIB)
+FASES_TANCADES = [
+    r"provisional\s+listing", r"final\s+official\s+list", r"relació\s+provisional", r"relación\s+provisional",
+    r"relació\s+definitiva", r"relación\s+definitiva", r"llista\s+provisional", r"lista\s+provisional",
+    r"llista\s+definitiva", r"lista\s+definitiva", r"llista\s+d['’]admesos", r"admesos\s+i\s+exclosos",
+    r"resultat", r"resultado", r"qualificacions", r"calificaciones", r"baremació", r"aprovats", r"aprobados",
+    r"data\s+(?:del\s+)?\d", r"data\s+del\s+(?:primer|segon|tercer)", r"fecha\s+del",
+    r"citació", r"citación", r"revisió\s+examen", r"revisió\s+exercici",
+    r"tribunal\s+(?:qualificador|de\s+selecció)", r"constitució\s+del\s+tribunal",
+    r"comissió\s+avaluadora", r"composició\s+del\s+tribunal",
+    r"acta\s+(?:núm|de\s+la\s+sessió|sessió|valoració)", r"valoració\s+de\s+mèrits",
+    r"proposta\s+de\s+(?:candidats|nomenament|contractació)", r"constitució\s+(?:de\s+la\s+)?borsa",
+    r"nomenament", r"nombramiento", r"adjudicaci", r"adjudicación",
+    r"recurs\s+d['’]alçada", r"recurso\s+de\s+alzada", r"desestimació",
+    r"finalitzaci", r"finalizaci", r"comissió\s+de\s+serveis", r"promoció\s+interna",
+    r"^\s*annex\b", r"^\s*anexo\b",
+    r"oferta\s+d['’]ocupació\s+pública", r"oferta\s+de\s+empleo\s+público", r"\boop\b", r"\boep\b",
+    r"plantilla\s+orgànica", r"relació\s+de\s+llocs\s+de\s+treball", r"\brlt\b", r"\brpt\b",
+    r"licit", r"contracte\s+de\s+servei", r"plecs", r"subvenc", r"premi", r"seminari", r"jornada",
+    r"memòria", r"expropiaci", r"cuentas\s+anuales", r"comptes\s+anuals", r"estadístiques", r"estadísticas",
+    r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella"
+]
+
+# Titulacions alienes o llocs C2/oficis
 TITULACIONS_EXCLOSES = [
     r"auxiliar\s+administrati", r"auxiliar\s+administrativo", r"aux\.?\s*adm", r"\bc2\b",
     r"dret", r"derecho", r"jurídic", r"jurídico", r"lletrat", r"letrado", r"advoca",
@@ -162,39 +187,16 @@ TITULACIONS_EXCLOSES = [
     r"economista", r"interventor", r"tresorer", r"tesorero", r"comptabilitat", r"contabilidad",
     r"informàtic", r"informático", r"programador", r"desenvolupador", r"sistemes\s+informàtics", r"\btic\b",
     r"policia\s+local", r"policía\s+local", r"bomber", r"bombero", r"socorrista",
-    r"oficial\s+\d", r"manteniment", r"mantenimiento", r"electricista", r"lampista",
-    r"fuster", r"jardiner", r"netej", r"limpieza", r"conserge", r"subaltern",
-    r"ordenança", r"peó", r"peón", r"operari", r"operario", r"brigada", r"cuina", r"conductor", r"xofer"
-]
-
-# Tràmits ja tancats, planificació interna, licitacions o altres illes
-TRAMITS_O_SOROLL = [
-    r"finalitzat", r"finalizado", r"tancat", r"cerrado",
-    r"oferta\s+d['’]ocupació\s+pública", r"oferta\s+de\s+empleo\s+público", r"\boop\b", r"\boep\b",
-    r"plantilla\s+orgànica", r"relació\s+de\s+llocs\s+de\s+treball", r"\brlt\b", r"\brpt\b",
-    r"^\s*annex\b", r"^\s*anexo\b",
-    r"llista\s+provisional", r"lista\s+provisional", r"llista\s+definitiva", r"lista\s+definitiva",
-    r"relació\s+provisional", r"relación\s+provisional", r"relació\s+definitiva", r"relación\s+definitiva",
-    r"resultat", r"resultado", r"qualificacions", r"calificaciones", r"baremació", r"aprovats", r"aprobados",
-    r"data\s+(?:del\s+)?\d", r"data\s+del\s+(?:primer|segon|tercer)", r"fecha\s+del",
-    r"citació", r"citación", r"revisió\s+examen", r"revisió\s+exercici",
-    r"admesos\s+i\s+exclosos", r"admitidos\s+y\s+excluidos", r"llista\s+d['’]admesos",
-    r"tribunal\s+qualificador", r"constitució\s+del\s+tribunal",
-    r"acta\s+(?:de\s+la\s+)?sessió", r"valoració\s+de\s+mèrits",
-    r"recurs\s+d['’]alçada", r"recurso\s+de\s+alzada", r"desestimació",
-    r"nomenament", r"nombramiento", r"adjudicaci", r"adjudicación",
-    r"comissió\s+de\s+serveis", r"comisión\s+de\s+servicios",
-    r"promoció\s+interna", r"promoción\s+interna", r"mobilitat\s+sense\s+ascens",
-    r"licit", r"contracte\s+de\s+servei", r"plecs", r"subvenc", r"premi", r"seminari", r"jornada",
-    r"memòria", r"expropiaci", r"cuentas\s+anuales", r"comptes\s+anuals", r"estadístiques", r"estadísticas",
-    r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella"
+    r"oficial\s+\d", r"xòfer", r"chofer", r"conductor", r"manteniment", r"mantenimiento",
+    r"electricista", r"lampista", r"fuster", r"jardiner", r"netej", r"limpieza",
+    r"conserge", r"subaltern", r"ordenança", r"peó", r"peón", r"operari", r"operario", r"brigada", r"cuina"
 ]
 
 PATRO_UBICACIO = re.compile(r"\b(" + "|".join(re.escape(x) for x in NOMS_TERRITORI_I_ENS) + r")\b", re.I)
 PATRO_PERFIL_BLANC = re.compile(r"(" + "|".join(LLISTA_BLANCA_PERFIL) + r")", re.I)
-PATRO_CONVOCATORIA = re.compile(r"(" + "|".join(INDICADOR_CONVOCATORIA) + r")", re.I)
+PATRO_OBERTURA = re.compile(r"(" + "|".join(INDICADOR_OBERTURA) + r")", re.I)
+PATRO_TANCADA = re.compile(r"(" + "|".join(FASES_TANCADES) + r")", re.I)
 PATRO_TITULACIO_EXCLOSA = re.compile(r"(" + "|".join(TITULACIONS_EXCLOSES) + r")", re.I)
-PATRO_SOROLL = re.compile(r"(" + "|".join(TRAMITS_O_SOROLL) + r")", re.I)
 PATRO_IMAS = re.compile(r"\b(imas|1232767)\b", re.I)
 
 
@@ -227,21 +229,24 @@ def envia_telegram_blocs(blocs_html: list[str]):
         print("Resposta Telegram:", resp.status_code, resp.text[:160])
 
 
-def es_rellevant(text: str, es_local_mallorca: bool = False, es_boib_seccio2: bool = False) -> bool:
+def valida_oferta(text: str, es_contenidor_rrhh: bool = False, requerir_ubicacio: bool = False) -> bool:
     t = text.strip()
-    if len(t) < 18:
+    if len(t) < 20:
         return False
-    if PATRO_SOROLL.search(t) or PATRO_TITULACIO_EXCLOSA.search(t):
+    if PATRO_TANCADA.search(t) or PATRO_TITULACIO_EXCLOSA.search(t):
         return False
     if PATRO_IMAS.search(t):
         return True
-    if not PATRO_PERFIL_BLANC.search(t):
+    if requerir_ubicacio and not PATRO_UBICACIO.search(t):
         return False
-    if es_boib_seccio2:
-        return True
-    if es_local_mallorca:
-        return bool(PATRO_CONVOCATORIA.search(t))
-    return bool(PATRO_UBICACIO.search(t) and PATRO_CONVOCATORIA.search(t))
+
+    # Si ja som dins d'un tauler oficial de RRHH (Gestiona Seleccions, Convoca, BOIB Sec II, CAIB Oposicions),
+    # basta que sigui una obertura real i no estigui exclosa (així no perdem títols genèrics com "Anunci de la convocatòria")
+    if es_contenidor_rrhh:
+        return bool(PATRO_OBERTURA.search(t))
+
+    # Si és una web generalista (SOIB, BOE, portals generals), exigim obertura + perfil blanc explícit
+    return bool(PATRO_OBERTURA.search(t) and PATRO_PERFIL_BLANC.search(t))
 
 
 def desa_convocatoria(cur, codi, font, entitat, titol, estat, url):
@@ -264,43 +269,88 @@ def desa_log(cur, font, identificador, estat, obs=""):
     """, (datetime.date.today(), font, identificador, estat, obs[:300]))
 
 
-def extreu_candidats_soup(soup: BeautifulSoup, base_url: str, es_boib_seccio2: bool = False):
+def extreu_candidats_estructurals(soup: BeautifulSoup, base_url: str, mode: str = "GENERAL"):
     for tag in soup(["nav", "header", "footer", "script", "style"]):
         tag.decompose()
 
     candidats = []
     vists = set()
 
-    # 1. Blocs estructurats (targetes convoca.online, files de taula, ítems de llista)
-    for bloc in soup.find_all(["tr", "li", "article"]):
+    # MODE 1: Seu Electrònica Gestiona (*.sedelectronica.es/board)
+    if mode == "GESTIONA":
+        for tr in soup.find_all("tr"):
+            enllacos = tr.find_all("a", href=True)
+            if not enllacos:
+                continue
+            txt = re.sub(r"\s+", " ", tr.get_text(" ", strip=True))
+            # Filtre estructural exacte detectat a l'auditoria
+            if "seleccions de personal i provisions de llocs de treball" not in txt.lower():
+                continue
+            if valida_oferta(txt, es_contenidor_rrhh=True):
+                enllac = urljoin(base_url, enllacos[0]["href"])
+                clau = f"{txt[:150]}|{enllac}"
+                if clau not in vists:
+                    vists.add(clau)
+                    candidats.append((txt, enllac))
+        return candidats
+
+    # MODE 2: Plataforma Convoca (*.convoca.online)
+    if mode == "CONVOCA":
+        articles = soup.select("article.applicant__article") or soup.find_all("article")
+        for art in articles:
+            enllacos = art.find_all("a", href=True)
+            if not enllacos:
+                continue
+            txt = re.sub(r"\s+", " ", art.get_text(" ", strip=True))
+            # A Convoca, les fases 3+ (Tribunal, Acta, Resultat) no són convocatòries noves
+            if re.search(r"\b(?:[3-9]|[1-9]\d)\.\s", txt):
+                continue
+            if valida_oferta(txt, es_contenidor_rrhh=True):
+                enllac = urljoin(base_url, enllacos[0]["href"])
+                clau = f"{txt[:150]}|{enllac}"
+                if clau not in vists:
+                    vists.add(clau)
+                    candidats.append((txt, enllac))
+        return candidats
+
+    # MODE 3: Fundació BIT (només targetes amb NOVA CONVOCATÒRIA)
+    if "fundaciobit.org" in base_url:
+        for a in soup.find_all("a", href=True):
+            txt = re.sub(r"\s+", " ", a.get_text(" ", strip=True))
+            if "nova convocatòria" in txt.lower() and valida_oferta(txt, es_contenidor_rrhh=True):
+                enllac = urljoin(base_url, a["href"])
+                if enllac not in vists:
+                    vists.add(enllac)
+                    candidats.append((txt, enllac))
+        return candidats
+
+    # MODE 4: BOIB Secció II / CAIB Oposicions / UIB / Resta d'entitats
+    es_rrhh = mode in ("BOIB_SEC2", "RRHH_DIRECTE")
+    for bloc in soup.find_all(["tr", "li", "article", "div"]):
         enllacos = bloc.find_all("a", href=True)
-        if not enllacos or len(enllacos) > 4:
+        if not (1 <= len(enllacos) <= 3):
             continue
-        text_bloc = re.sub(r"\s+", " ", bloc.get_text(" ", strip=True))
-        if 20 <= len(text_bloc) <= 550 and es_rellevant(text_bloc, es_local_mallorca=True, es_boib_seccio2=es_boib_seccio2):
-            href = enllacos[0]["href"]
-            enllac = urljoin(base_url, href)
+        txt = re.sub(r"\s+", " ", bloc.get_text(" ", strip=True))
+        if 25 <= len(txt) <= 550 and valida_oferta(txt, es_contenidor_rrhh=es_rrhh):
+            enllac = urljoin(base_url, enllacos[0]["href"])
             if enllac.startswith(("mailto:", "javascript:")):
                 continue
-            clau = f"{text_bloc[:150]}|{enllac}"
+            clau = f"{txt[:150]}|{enllac}"
             if clau not in vists:
                 vists.add(clau)
-                candidats.append((text_bloc, enllac))
+                candidats.append((txt, enllac))
 
-    # 2. Enllaços directes fora de blocs
     for a in soup.find_all("a", href=True):
-        link_text = re.sub(r"\s+", " ", a.get_text(" ", strip=True))
-        if len(link_text) < 18:
+        txt = re.sub(r"\s+", " ", a.get_text(" ", strip=True))
+        if len(txt) < 22:
             continue
         enllac = urljoin(base_url, a["href"])
         if enllac.startswith(("mailto:", "javascript:")) or enllac.endswith("#"):
             continue
-        clau = f"{link_text[:150]}|{enllac}"
-        if clau in vists:
-            continue
-        if es_rellevant(link_text, es_local_mallorca=True, es_boib_seccio2=es_boib_seccio2):
+        clau = f"{txt[:150]}|{enllac}"
+        if clau not in vists and valida_oferta(txt, es_contenidor_rrhh=es_rrhh):
             vists.add(clau)
-            candidats.append((link_text, enllac))
+            candidats.append((txt, enllac))
 
     return candidats
 
@@ -326,10 +376,11 @@ def extreu_fitxa_detall(item: tuple):
                     cos_net = re.sub(r"\s+", " ", contenidor.get_text(" ", strip=True))
                     text_complet = f"{titol} {cos_net[:2500]}"
 
-                    if PATRO_SOROLL.search(cos_net[:2500]) or PATRO_TITULACIO_EXCLOSA.search(cos_net[:2500]):
+                    # Segon filtre damunt les bases completes (p. ex. si a Fundació BIT demana Grau en Dret)
+                    if PATRO_TANCADA.search(cos_net[:2500]) or PATRO_TITULACIO_EXCLOSA.search(cos_net[:2500]):
                         return None
 
-                    if len(titol) < 95 or "anunci de la convocatòria" in titol.lower():
+                    if len(titol) < 100 or "anunci de la convocatòria" in titol.lower():
                         paragrafs = [
                             re.sub(r"\s+", " ", p.get_text(" ", strip=True))
                             for p in contenidor.find_all(["p", "dd", "li"])
@@ -417,7 +468,7 @@ def consulta_boe(conn, data_str: str):
                             id_boe = item.get("identificador")
                             titol = item.get("titulo", "")
                             url_html = item.get("url_html", "")
-                            if es_rellevant(f"{nom_dep} {titol}", es_local_mallorca=False):
+                            if valida_oferta(f"{nom_dep} {titol}", es_contenidor_rrhh=False, requerir_ubicacio=True):
                                 if desa_convocatoria(cur, id_boe, "BOE", nom_dep, titol, "OBERTA", url_html):
                                     novetats.append((id_boe, f"BOE · {nom_dep}", titol, url_html))
 
@@ -452,23 +503,19 @@ def consulta_boib(conn, any_actual: int):
             r_ed = requests.get(url_edicio, headers=HEADERS_HTTP, timeout=20)
             soup_ed = BeautifulSoup(r_ed.text, "html.parser")
 
-            # Llegeix totes les subpàgines de Secció II (Oposicions i concursos) i Secció V (Anuncis)
             seccions_objectiu = []
             for a_sec in soup_ed.find_all("a", href=True):
                 href = a_sec["href"]
-                if re.search(rf"/eboibfront/ca/{any_actual}/{num_edicio}/(seccio-ii|oposicions|seccio-v)", href, re.I):
+                if re.search(rf"/eboibfront/ca/{any_actual}/{num_edicio}/(seccio-ii|seccio-v)", href, re.I):
                     full_sec = urljoin("https://www.caib.es", href)
-                    es_sec2 = bool(re.search(r"seccio-ii|oposicions", href, re.I))
-                    if (full_sec, es_sec2) not in seccions_objectiu:
-                        seccions_objectiu.append((full_sec, es_sec2))
+                    mode_sec = "BOIB_SEC2" if "seccio-ii" in href.lower() else "GENERAL"
+                    if (full_sec, mode_sec) not in seccions_objectiu:
+                        seccions_objectiu.append((full_sec, mode_sec))
 
-            if not seccions_objectiu:
-                seccions_objectiu = [(url_edicio, False)]
-
-            for url_sec, es_sec2 in seccions_objectiu[:10]:
+            for url_sec, mode_sec in seccions_objectiu[:12]:
                 r_s = requests.get(url_sec, headers=HEADERS_HTTP, timeout=15)
                 soup_s = BeautifulSoup(r_s.text, "html.parser")
-                candidats = extreu_candidats_soup(soup_s, url_sec, es_boib_seccio2=es_sec2)
+                candidats = extreu_candidats_estructurals(soup_s, url_sec, mode=mode_sec)
                 for text, link in candidats:
                     h = hashlib.md5(f"{num_edicio}:{text[:180]}".encode()).hexdigest()[:10]
                     codi = f"BOIB-{num_edicio}-{h}"
@@ -482,21 +529,28 @@ def consulta_boib(conn, any_actual: int):
     return novetats
 
 
-def descarrega_portal_http(nom: str, url: str):
+def detecta_mode_portal(url: str) -> str:
+    if "sedelectronica.es" in url:
+        return "GESTIONA"
     if "convoca.online" in url:
+        return "CONVOCA"
+    if any(k in url for k in ("oposicions", "ofertes-de-feina", "treballa-amb-nosaltres", "Convocatories", "convocatorias", "pas/convocatories")):
+        return "RRHH_DIRECTE"
+    return "GENERAL"
+
+
+def descarrega_portal_http(nom: str, url: str):
+    mode = detecta_mode_portal(url)
+    if mode == "CONVOCA":
         return nom, url, "JS_REQUIRED", "", []
     try:
         r = requests.get(url, headers=HEADERS_HTTP, timeout=10)
         if r.status_code != 200:
             return nom, url, "ERROR", f"HTTP {r.status_code}", []
         soup = BeautifulSoup(r.text, "html.parser")
-        links_totals = len(soup.find_all("a", href=True))
-        if links_totals < 12 or "sedelectronica.es" in url:
-            candidats_http = extreu_candidats_soup(soup, url)
-            if not candidats_http:
-                return nom, url, "JS_REQUIRED", "", []
-            return nom, url, "REVISAT", "", candidats_http
-        return nom, url, "REVISAT", "", extreu_candidats_soup(soup, url)
+        if mode == "GESTIONA" and len(soup.find_all("tr")) < 2:
+            return nom, url, "JS_REQUIRED", "", []
+        return nom, url, "REVISAT", "", extreu_candidats_estructurals(soup, url, mode=mode)
     except Exception as e:
         return nom, url, "ERROR", str(e)[:120], []
 
@@ -508,7 +562,11 @@ async def renderitza_portals_js(pendents: list[tuple]):
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(user_agent=HEADERS_HTTP["User-Agent"])
+        # ignore_https_errors=True evita l'error de certificat SSL de Marratxí
+        context = await browser.new_context(
+            user_agent=HEADERS_HTTP["User-Agent"],
+            ignore_https_errors=True
+        )
         await context.route("**/*.{png,jpg,jpeg,gif,svg,css,woff,woff2}", lambda route: route.abort())
         sem = asyncio.Semaphore(5)
 
@@ -517,10 +575,10 @@ async def renderitza_portals_js(pendents: list[tuple]):
                 page = await context.new_page()
                 try:
                     await page.goto(url, wait_until="domcontentloaded", timeout=15000)
-                    await page.wait_for_timeout(2200)
-                    html_renderitzat = await page.content()
-                    soup = BeautifulSoup(html_renderitzat, "html.parser")
-                    candidats = extreu_candidats_soup(soup, url)
+                    await page.wait_for_timeout(2400)
+                    soup = BeautifulSoup(await page.content(), "html.parser")
+                    mode = detecta_mode_portal(url)
+                    candidats = extreu_candidats_estructurals(soup, url, mode=mode)
                     return nom, "REVISAT", "", candidats
                 except Exception as e:
                     return nom, "ERROR", str(e)[:120], []
