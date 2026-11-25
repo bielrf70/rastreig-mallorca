@@ -74,7 +74,7 @@ MUNICIPIS_53 = [
     ("Vilafranca de Bonany", "https://ajvilafrancadebonany.sedelectronica.es/board"),
 ]
 
-# 2. ORGANISMES AUTONÒMICS, INSULARS, UNIVERSITATS I EMPRESES PÚBLIQUES (URLS DIRECTES A TAULERS)
+# 2. ORGANISMES AUTONÒMICS, INSULARS, UNIVERSITATS I EMPRESES PÚBLIQUES
 ENTITATS_PUBLIQUES = [
     ("IMAS (Ofertes)", "https://www.imasmallorca.net/ca/ofertes-de-feina"),
     ("IMAS (Seu Electrònica)", "https://seu.imasmallorca.net/"),
@@ -112,7 +112,7 @@ ENTITATS_PUBLIQUES = [
     ("Fundació Deixalles", "https://www.deixalles.org/"),
 ]
 
-# 3. FILTRES: CONVOCATÒRIES OBERTES + EXCLUSIÓ DE C2, TRÀMITS TANCATS I CARRERES ALIENES
+# 3. FILTRES: CONVOCATÒRIES OBERTES + EXCLUSIÓ DE C2, PLANIFICACIÓ I CARRERES ALIENES
 NOMS_TERRITORI_I_ENS = [m[0].split(" (")[0].lower() for m in MUNICIPIS_53] + [
     "mallorca", "illes balears", "islas baleares", "caib", "imas", "1232767",
     "consell de mallorca", "ib-salut", "ibsalut", "ibavi", "abaqua", "ibanat",
@@ -125,50 +125,57 @@ OCUPACIO = [
     r"bors[íia]", r"borsa de treball", r"bolsa de trabajo", r"bolsa de empleo",
     r"oposic", r"concurs[- ]oposic", r"procés selectiu", r"proceso selectivo",
     r"procediment selectiu", r"procedimiento selectivo", r"oferta de treball",
-    r"oferta d'ocupació", r"oferta de empleo", r"contractació de personal",
-    r"contratación de personal", r"provisió", r"provisión",
+    r"contractació de personal", r"contratación de personal",
+    r"provisió de lloc", r"provisión de puesto", r"provisió d'un lloc",
     r"cobertura de \d+ pla", r"cobertura d'una pla", r"cobertura de pla",
     r"nova convocatòria", r"anunci de la convocatòria", r"bases i convocatòria",
     r"bases de la convocatòria", r"bases reguladores", r"convocatòria pública"
 ]
 
 TITULACIONS_EXCLOSES = [
-    r"auxiliar administratiu", r"auxiliar administrativo", r"aux\.?\s*adm",
-    r"grau en dret", r"grado en derecho", r"llicenciatura en dret", r"licenciatura en derecho",
-    r"jurídic", r"jurídico", r"lletrat", r"letrado", r"advocat",
+    r"auxiliar\s+administrati", r"auxiliar\s+administrativo", r"aux\.?\s*adm",
+    r"grau\s+en\s+dret", r"grado\s+en\s+derecho", r"llicenciatura\s+en\s+dret", r"licenciatura\s+en\s+derecho",
+    r"jurídic", r"jurídico", r"lletrat", r"letrado", r"advoca",
     r"sanitari", r"sanitario", r"metge", r"médico", r"infermer", r"enfermer",
-    r"auxiliar d'infermeria", r"tcae", r"celador", r"fisioterapeuta", r"farmacèutic",
-    r"veterinari", r"psic[òo]leg", r"psicología", r"treballador/a social", r"treballador social",
-    r"trabajador social", r"treballador/a familiar", r"educador/a social", r"educació infantil",
-    r"educación infantil", r"mestre", r"maestro", r"professor", r"profesor", r"docent", r"\bpdi\b",
+    r"auxiliar\s+d'infermeria", r"tcae", r"celador", r"fisioterapeuta", r"farmacèutic",
+    r"veterinari", r"psic[òo]leg", r"psicología",
+    r"treballador(?:/a|-a|a)?\s+(?:social|familiar)", r"trabajador(?:/a|-a|a)?\s+(?:social|familiar)",
+    r"atenció\s+domiciliària", r"atención\s+domiciliaria", r"gerocultor", r"cuidador", r"sociosanit",
+    r"educador(?:/a|-a|a)?\s+social", r"educació\s+infantil", r"educación\s+infantil",
+    r"mestre", r"maestro", r"professor", r"profesor", r"docent", r"\bpdi\b",
     r"arquitect", r"enginyer", r"ingenier", r"aparellador", r"delineant",
     r"economista", r"interventor", r"tresorer", r"tesorero", r"comptabilitat",
     r"informàtic", r"informático", r"programador", r"desenvolupador",
-    r"policia local", r"policía local", r"bomber", r"bombero", r"socorrista",
-    r"oficial 1", r"manteniment", r"mantenimiento", r"electricista", r"lampista",
+    r"policia\s+local", r"policía\s+local", r"bomber", r"bombero", r"socorrista",
+    r"oficial\s+1", r"manteniment", r"mantenimiento", r"electricista", r"lampista",
     r"fuster", r"jardiner", r"netej", r"conserge", r"subaltern", r"ordenança", r"peó", r"operari", r"brigada"
 ]
 
 EXCLOURES = [
-    r"\bc2\b", r"licit", r"contracte de servei", r"contrato de servicio", r"plecs", r"pliegos",
-    r"pressupost base", r"perfil del contractant", r"adjudicaci", r"adjudicación",
-    r"llista provisional", r"lista provisional", r"llista definitiva", r"lista definitiva",
-    r"relació provisional", r"relación provisional", r"provisional listing",
-    r"relació definitiva", r"relación definitiva", r"resultat provisional", r"resultado provisional",
-    r"resultat definitiu", r"resultado definitivo", r"resultat \d", r"resultado \d",
-    r"data \d", r"data del", r"fecha del", r"recurs d'alçada", r"recurso de alzada",
-    r"desestimació", r"llista d'admesos", r"lista de admitidos", r"admesos i exclosos",
-    r"admitidos y excluidos", r"tribunal qualificador", r"constitució del tribunal",
+    r"\bc2\b",
+    r"oferta\s+d['’]ocupació\s+pública", r"oferta\s+de\s+empleo\s+público", r"\boop\b", r"\boep\b",
+    r"planificació\s+i\s+ordenació\s+de\s+personal", r"plantilla\s+orgànica",
+    r"relació\s+de\s+llocs\s+de\s+treball", r"\brlt\b", r"\brpt\b",
+    r"^\s*annex\b", r"^\s*anexo\b",
+    r"licit", r"contracte\s+de\s+servei", r"contrato\s+de\s+servicio", r"plecs", r"pliegos",
+    r"pressupost\s+base", r"perfil\s+del\s+contractant", r"adjudicaci", r"adjudicación",
+    r"llista\s+provisional", r"lista\s+provisional", r"llista\s+definitiva", r"lista\s+definitiva",
+    r"relació\s+provisional", r"relación\s+provisional", r"provisional\s+listing",
+    r"relació\s+definitiva", r"relación\s+definitiva", r"resultat\s+provisional", r"resultado\s+provisional",
+    r"resultat\s+definitiu", r"resultado\s+definitivo", r"resultat\s+\d", r"resultado\s+\d",
+    r"data\s+\d", r"data\s+del", r"fecha\s+del", r"recurs\s+d'alçada", r"recurso\s+de\s+alzada",
+    r"desestimació", r"llista\s+d'admesos", r"lista\s+de\s+admitidos", r"admesos\s+i\s+exclosos",
+    r"admitidos\s+y\s+excluidos", r"tribunal\s+qualificador", r"constitució\s+del\s+tribunal",
     r"baremació", r"aprovats", r"aprobados", r"qualificacions", r"calificaciones",
-    r"acta sessió", r"acta de la sessió", r"valoració de mèrits",
-    r"citació", r"citación", r"revisió examen", r"revisió exercici", r"finalització procés",
-    r"finalización proceso", r"comissió de serveis", r"comisión de servicios",
-    r"nomenament", r"nombramiento", r"promoció interna", r"promoción interna",
-    r"memòria", r"memoria", r"expropiaci", r"expropiación", r"cuentas anuales", r"comptes anuals",
+    r"acta\s+sessió", r"acta\s+de\s+la\s+sessió", r"valoració\s+de\s+mèrits",
+    r"citació", r"citación", r"revisió\s+examen", r"revisió\s+exercici", r"finalització\s+procés",
+    r"finalización\s+proceso", r"comissió\s+de\s+serveis", r"comisión\s+de\s+servicios",
+    r"nomenament", r"nombramiento", r"promoció\s+interna", r"promoción\s+interna",
+    r"memòria", r"memoria", r"expropiaci", r"expropiación", r"cuentas\s+anuales", r"comptes\s+anuals",
     r"auditoría", r"estadístiques", r"estadísticas", r"seminari", r"jornada", r"premi",
-    r"subvenc", r"xec formació", r"formació", r"estudiants", r"notícies", r"noticias",
-    r"sessió ordinària", r"sessió extraordinària", r"del ple\b", r"del pleno\b",
-    r"colònies felines", r"taules salarials", r"permisos i llicències", r"protecció de dades",
+    r"subvenc", r"xec\s+formació", r"formació", r"estudiants", r"notícies", r"noticias",
+    r"sessió\s+ordinària", r"sessió\s+extraordinària", r"del\s+ple\b", r"del\s+pleno\b",
+    r"colònies\s+felines", r"taules\s+salarials", r"permisos\s+i\s+llicències", r"protecció\s+de\s+dades",
     r"eivissa", r"ibiza", r"formentera", r"menorca", r"maó", r"ciutadella"
 ]
 
