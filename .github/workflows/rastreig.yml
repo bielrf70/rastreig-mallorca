@@ -1,0 +1,23 @@
+name: Rastreig Integral Mallorca
+
+on:
+  schedule:
+    # S'executa cada dia (dilluns a diumenge) a les 11:00 UTC (12:00 h a Mallorca a l'hivern)
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+jobs:
+  executa-rastreig:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Executa rastrejador contra Neon
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python rastreig_mallorca.py
