@@ -22,5 +22,9 @@ jobs:
           pip install requests beautifulsoup4 psycopg2-binary playwright
           playwright install --with-deps chromium
 
-      - name: Executa auditoria de patrons
-        run: python auditoria_patrons.py
+      - name: Executa rastrejador contra Neon
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python rastreig_mallorca.py
