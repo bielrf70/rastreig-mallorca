@@ -1,15 +1,17 @@
 import os
 import re
+import html
 import hashlib
 import datetime
 import requests
 import psycopg2
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-DATABASE_URL = os.environ["NEON_DATABASE_URL"]
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+DATABASE_URL = os.environ["NEON_DATABASE_URL"].strip()
+TELEGRAM_TOKEN = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+TELEGRAM_CHAT_ID = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
 
 HEADERS_HTTP = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -142,16 +144,18 @@ PATRO_PERFIL = re.compile(r"(" + "|".join(PERFILS) + r")", re.I)
 PATRO_EXCLOURE = re.compile(r"(" + "|".join(EXCLOURES) + r")", re.I)
 
 
-def envia_telegram(missatge: str):
+def envia_telegram(missatge_html: str):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram no configurat.")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, json={
+    resp = requests.post(url, json={
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": missatge[:4000],
-        "parse_mode": "Markdown",
+        "text": missatge_html[:4000],
+        "parse_mode": "HTML",
         "disable_web_page_preview": True
     }, timeout=15)
+    print("Resposta Telegram:", resp.status_code, resp.text[:200])
 
 
 def es_rellevant(text: str, es_local_mallorca: bool = False) -> bool:
@@ -185,7 +189,7 @@ def desa_log(cur, font, identificador, estat, obs=""):
 
 def consulta_boe(conn, data_str: str):
     url = f"https://www.boe.es/datosabiertos/api/boe/sumario/{data_str}"
-    r = requests.get(url, headers={"Accept": "application/json"}, timeout=25)
+    r = requests.get(url, headers={"Accept": "application/json"}, timeout=20)
     novetats = []
 
     with conn.cursor() as cur:
@@ -237,7 +241,7 @@ def consulta_boib(conn, any_actual: int):
     novetats = []
     with conn.cursor() as cur:
         try:
-            r = requests.get(url_portada, headers=HEADERS_HTTP, timeout=25)
+            r = requests.get(url_portada, headers=HEADERS_HTTP, timeout=20)
             if r.status_code != 200:
                 desa_log(cur, "BOIB", f"BOIB-{any_actual}", "ERROR", f"HTTP {r.status_code}")
                 conn.commit()
@@ -255,7 +259,7 @@ def consulta_boib(conn, any_actual: int):
 
             url_edicio = urljoin("https://www.caib.es", enllacos[0])
             num_edicio = url_edicio.rstrip("/").split("/")[-1]
-            r_ed = requests.get(url_edicio, headers=HEADERS_HTTP, timeout=25)
+            r_ed = requests.get(url_edicio, headers=HEADERS_HTTP, timeout=20)
             soup_ed = BeautifulSoup(r_ed.text, "html.parser")
 
             for a_tag in soup_ed.find_all("a", href=True):
@@ -276,31 +280,44 @@ def consulta_boib(conn, any_actual: int):
     return novetats
 
 
+def descarrega_portal(nom: str, url: str):
+    try:
+        r = requests.get(url, headers=HEADERS_HTTP, timeout=10)
+        if r.status_code != 200:
+            return nom, "ERROR", f"HTTP {r.status_code}", []
+        soup = BeautifulSoup(r.text, "html.parser")
+        candidats = []
+        for a in soup.find_all("a", href=True):
+            text = a.get_text(" ", strip=True)
+            if len(text) >= 12 and es_rellevant(f"{nom} {text}", es_local_mallorca=True):
+                enllac = urljoin(url, a["href"])
+                candidats.append((text, enllac))
+        return nom, "REVISAT", "", candidats
+    except Exception as e:
+        return nom, "ERROR", str(e)[:120], []
+
+
 def rastreja_portals(conn, llista_fonts, tipus_font):
     novetats = []
+    resultats_http = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futurs = [executor.submit(descarrega_portal, nom, url) for nom, url in llista_fonts]
+        for futur in as_completed(futurs):
+            resultats_http.append(futur.result())
+
     with conn.cursor() as cur:
-        for nom, url in llista_fonts:
-            try:
-                r = requests.get(url, headers=HEADERS_HTTP, timeout=15)
-                if r.status_code != 200:
-                    desa_log(cur, tipus_font, nom, "ERROR", f"HTTP {r.status_code}")
-                    continue
-                soup = BeautifulSoup(r.text, "html.parser")
-                trobades_font = 0
-                for a in soup.find_all("a", href=True):
-                    text = a.get_text(" ", strip=True)
-                    if len(text) < 12:
-                        continue
-                    if es_rellevant(f"{nom} {text}", font_local_mallorca=True):
-                        enllac = urljoin(url, a["href"])
-                        h = hashlib.md5(f"{nom}:{text}:{enllac}".encode()).hexdigest()[:12]
-                        codi = f"{tipus_font}-{h}"
-                        if desa_convocatoria(cur, codi, tipus_font, nom, text, "DETECTADA_PORTAL", enllac):
-                            novetats.append((codi, nom, text[:240], enllac))
-                            trobades_font += 1
-                desa_log(cur, tipus_font, nom, "REVISAT", f"Noves: {trobades_font}")
-            except Exception as e:
-                desa_log(cur, tipus_font, nom, "ERROR", str(e)[:120])
+        for nom, estat, error_msg, candidats in resultats_http:
+            if estat == "ERROR":
+                desa_log(cur, tipus_font, nom, "ERROR", error_msg)
+                continue
+            trobades_font = 0
+            for text, enllac in candidats:
+                h = hashlib.md5(f"{nom}:{text}:{enllac}".encode()).hexdigest()[:12]
+                codi = f"{tipus_font}-{h}"
+                if desa_convocatoria(cur, codi, tipus_font, nom, text, "DETECTADA_PORTAL", enllac):
+                    novetats.append((codi, nom, text[:240], enllac))
+                    trobades_font += 1
+            desa_log(cur, tipus_font, nom, "REVISAT", f"Noves: {trobades_font}")
         conn.commit()
     return novetats
 
@@ -316,12 +333,16 @@ def main():
     novetats_municipis = rastreja_portals(conn, MUNICIPIS_53, "AJUNTAMENT")
 
     totes = novetats_boe + novetats_boib + novetats_entitats + novetats_municipis
+    print(f"Total novetats detectades: {len(totes)}")
 
     if totes:
-        linies = [f"📌 *Rastreig Integral Mallorca · {avui.strftime('%d/%m/%Y')}*\n"]
+        linies = [f"📌 <b>Rastreig Integral Mallorca · {avui.strftime('%d/%m/%Y')}</b>\n"]
         for codi, entitat, titol, url in totes[:25]:
-            alerta = "🚨 *ALERTA IMAS C1!* " if ("imas" in (entitat + titol).lower() or "1232767" in titol) else ""
-            linies.append(f"{alerta}*{entitat}* (`{codi}`)\n{titol}\n[Veure fitxa]({url})\n")
+            alerta = "🚨 <b>ALERTA IMAS C1!</b> " if ("imas" in (entitat + titol).lower() or "1232767" in titol) else ""
+            entitat_segura = html.escape(entitat)
+            titol_segur = html.escape(titol)
+            url_segura = html.escape(url, quote=True)
+            linies.append(f"{alerta}<b>{entitat_segura}</b> (<code>{codi}</code>)\n{titol_segur}\n<a href=\"{url_segura}\">Veure fitxa</a>\n")
         envia_telegram("\n".join(linies))
 
     conn.close()
